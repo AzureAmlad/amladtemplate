@@ -3,25 +3,25 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "networkInterfaces_amladservernic_name": {
-            "value": null
+            "value": "amladservernic"
         },
         "publicIPAddresses_amladtemplatepublicip_name": {
-            "value": null
+            "value": "amladtemplatepublicip"
         },
         "virtualNetworks_amladtemplatevnet_name": {
-            "value": null
+            "value": "amladtemplatevnet"
         },
         "company_name": {
-            "value": null
+            "value": ""
         },
         "storageAccount_prefix": {
-            "value": null
+            "value": ""
         },
 		"addressPrefix": {
-            "value": null
+            "value": "192.168.1.0/28"
         },
 		"subnetAddressPrefix": {
-            "value": null
+            "value": "192.168.1.0/28"
         }
     }
 }
