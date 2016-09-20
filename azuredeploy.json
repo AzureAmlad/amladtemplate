@@ -36,7 +36,7 @@
 		"windowsOSVersion": "2012-R2-Datacenter",
 		"imagePublisher": "MicrosoftWindowsServer",
 		"imageOffer": "WindowsServer",
-		"adminUsername": "administrador",
+		"adminUsername": "amlad",
 		"adminPassword": "Amlad2015"
     },
     "resources": [
@@ -124,7 +124,9 @@
                     "vmSize": "Basic_A3"
                 },
                 "osProfile": {
-                    "computerName": "[variables('vmNames')[1]]"
+                    "computerName": "[variables('vmNames')[1]]",
+					"adminUsername": "[variables('adminUsername')]",
+					"adminPassword": "[variables('adminPassword')]"
                 },
                 "storageProfile": {
                     "osDisk": {
