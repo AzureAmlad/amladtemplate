@@ -55,7 +55,7 @@
 		  },
 		  "properties": {
 			"hardwareProfile": {
-			  "vmSize": "Basic_A2"
+			  "vmSize": "Standard_D2"
 			},
 			"osProfile": {
 			  "computerName": "[variables('vmNames')[0]]",
@@ -124,7 +124,7 @@
                     "vmSize": "Basic_A3"
                 },
                 "osProfile": {
-                    "computerName": "[variables('vm_name')]"
+                    "computerName": "[variables('vmNames')[1]]"
                 },
                 "storageProfile": {
                     "osDisk": {
