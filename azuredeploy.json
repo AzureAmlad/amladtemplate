@@ -57,8 +57,6 @@
 			},
 			"osProfile": {
 			  "computerName": "[variables('vmNames')[0]]",
-			  "adminUsername": "[parameters('AdminUsername')]",
-			  "adminPassword": "[parameters('adminPassword')]"
 			},
 			"storageProfile": {
 			  "imageReference": {
@@ -105,7 +103,7 @@
 				  ]
 				},
 				"protectedSettings": {
-				  "commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ','ImageTransfer.ps1 -SourceImage ',parameters('sourceImageURI'),' -SourceSAKey ', listKeys(resourceId(parameters('sourceStorageAccountResourceGroup'),'Microsoft.Storage/storageAccounts', variables('sourceStorageAccountName')), '2015-06-15').key1, ' -DestinationURI https://', variables('storageAccountName'), '.blob.core.windows.net/vhds', ' -DestinationSAKey ', listKeys(concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName')), '2015-06-15').key1)]"
+				  "commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ','ImageTransfer.ps1 -SourceImage ',variables('sourceImageURI'),' -SourceSAKey ', listKeys(resourceId(variables('sourceStorageAccountResourceGroup'),'Microsoft.Storage/storageAccounts', variables('sourceStorageAccountName')), '2015-06-15').key1, ' -DestinationURI https://', variables('storageAccountName'), '.blob.core.windows.net/vhds', ' -DestinationSAKey ', listKeys(concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName')), '2015-06-15').key1)]"
 				}
 			  }
 			}
@@ -179,7 +177,7 @@
             },
             "resources": [],
             "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_amladtemplatevnet_name'))]"
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]"
             ]
         },
 		{
@@ -210,8 +208,8 @@
             },
             "resources": [],
             "dependsOn": [
-                "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_amladtemplatepublicip_name'))]",
-                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_amladtemplatevnet_name'))]"
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]"
             ]
         },
         {
@@ -233,7 +231,7 @@
         {
             "comments": "Se ha generalizado a partir del recurso '/subscriptions/30faf2d0-6e8f-4eec-b0c6-89adcb705d1b/resourceGroups/AmladTemplate/providers/Microsoft.Network/virtualNetworks/amladtemplatevnet'.",
             "type": "Microsoft.Network/virtualNetworks",
-            "name": "[parameters('virtualNetworkName')]",
+            "name": "[variables('virtualNetworkName')]",
             "apiVersion": "2016-03-30",
             "location": "[resourceGroup().location]",
             "properties": {
