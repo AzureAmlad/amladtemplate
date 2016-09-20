@@ -132,7 +132,7 @@
                         "createOption": "FromImage",
                         "osType": "Linux",
                         "image": {
-                            "uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName')), '2016-01-01').primaryEndpoints.blob, 'vhds/',variables('vmNames')[1]),'.vhd']"
+                            "uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName')), '2016-01-01').primaryEndpoints.blob, 'vhds/',variables('vmNames')[1],'.vhd')]"
                         },
                         "vhd": {
                             "uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName')), '2016-01-01').primaryEndpoints.blob, 'vhds/',variables('vmNames')[1],'-osdisk','.vhd')]"
