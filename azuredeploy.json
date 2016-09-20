@@ -58,7 +58,7 @@
 			  "vmSize": "Basic_A2"
 			},
 			"osProfile": {
-			  "computerName": "[variables('vmNames')[0]]"
+			  "computerName": "[variables('vmNames')[0]]",
 			  "adminUsername": "[variables('adminUsername')]",
 			  "adminPassword": "[variables('adminPassword')]"
 			},
