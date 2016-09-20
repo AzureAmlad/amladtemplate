@@ -1,0 +1,7 @@
+{
+  "itemDisplayName": "Create basic Amlad suite from a custom image in new storage account",
+  "description": "This template allows you to deploy an Amlad suite composed by a VM, a public IP, a Virtual Network and a network interface",
+  "summary": "Deploy an Amlad suite.",
+  "githubUsername": "AzureAmlad",
+  "dateUpdated": "2016-09-20"
+}
