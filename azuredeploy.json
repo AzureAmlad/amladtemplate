@@ -2,25 +2,9 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "networkInterfaces_amladservernic_name": {
-            "defaultValue": "amladservernic",
-            "type": "String"
-        },
-        "publicIPAddresses_amladtemplatepublicip_name": {
-            "defaultValue": "amladtemplatepublicip",
-            "type": "String"
-        },
-        "virtualNetworks_amladtemplatevnet_name": {
-            "defaultValue": "amladtemplatevnet",
-            "type": "String"
-        },
-        "company_name": {
+        "companyName": {
             "defaultValue": "",
             "type": "string"
-        },
-        "storageAccount_prefix": {
-            "type": "string",
-            "maxLength": 11
         },
         "addressPrefix": {
             "defaultValue": "192.168.1.0/28",
@@ -32,17 +16,105 @@
         }
     },
     "variables": {
-        "domain": "[parameters('company_name')]",
-        "dest_storageAccount_name": "[concat(parameters('storageAccount_prefix'), uniqueString(resourceGroup().id))]",
-        "orig_storageAccount_name": "amladtemplatestorage",
-        "vm_name": "AmladServer",
-        "orig_vhd_name": "AmladVM"
+        "domain": "[parameters('companyName')]",
+        "storageAccountName": "[concat('amladStorage', uniqueString(resourceGroup().id))]",
+		"nicNames": [
+		  "[concat('transferNic', uniqueString(resourceGroup().id))]",
+		  "[concat('amladNic', uniqueString(resourceGroup().id))]"
+		],
+		"publicIPAddressName": "[concat('amladPublicIP', uniqueString(resourceGroup().id))]",
+		"virtualNetworkName": "[concat('amladVnet', uniqueString(resourceGroup().id))]",
+		"virtualSubnetworkName": "[concat('amladSubnet', uniqueString(resourceGroup().id))]",
+		"sourceStorageAccountResourceGroup": "AmladTemplate",
+		"sourceStorageAccountName": "amladtemplatestorage",
+		"sourceImageURI": "[concat('https://', variables('sourceStorageAccountName'), '.blob.core.windows.net/vhds/AmladVM.vhd')]",
+		"transferScriptURI": "https://raw.githubusercontent.com/AzureAmlad/amladtemplate/master/ImageTransfer.ps1",
+		"vmNames": [
+		  "transferVM",
+		  "amladServer"
+		],
+		"windowsOSVersion": "2012-R2-Datacenter",
+		"imagePublisher": "MicrosoftWindowsServer",
+		"imageOffer": "WindowsServer"
     },
     "resources": [
+		{
+		  "comments": "# TRANSFER VM",
+		  "name": "[variables('vmNames')[0]]",
+		  "type": "Microsoft.Compute/virtualMachines",
+		  "location": "[resourceGroup().location]",
+		  "apiVersion": "2015-06-15",
+		  "dependsOn": [
+			"[concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
+			"[concat('Microsoft.Network/networkInterfaces/', variables('nicNames')[0])]"
+		  ],
+		  "tags": {
+			"displayName": "[variables('vmNames')[0]]"
+		  },
+		  "properties": {
+			"hardwareProfile": {
+			  "vmSize": "Basic_A2"
+			},
+			"osProfile": {
+			  "computerName": "[variables('vmNames')[0]]",
+			  "adminUsername": "[parameters('AdminUsername')]",
+			  "adminPassword": "[parameters('adminPassword')]"
+			},
+			"storageProfile": {
+			  "imageReference": {
+				"publisher": "[variables('imagePublisher')]",
+				"offer": "[variables('imageOffer')]",
+				"sku": "[variables('windowsOSVersion')]",
+				"version": "latest"
+			  },
+			  "osDisk": {
+				"name": "[concat(variables('vmNames')[0],'-osdisk')]",
+				"vhd": {
+				  "uri": "[concat('http://', variables('storageAccountName'), '.blob.core.windows.net/', 'vhds/',variables('vmNames')[0],'-osdisk' , '.vhd')]"
+				},
+				"caching": "ReadWrite",
+				"createOption": "FromImage"
+			  }
+			},
+			"networkProfile": {
+			  "networkInterfaces": [
+				{
+				  "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('nicNames')[0]))]"
+				}
+			  ]
+			}
+		  },
+		  "resources": [
+			{
+			  "comments": "Custom Script that copies VHDs from source storage account to destination storage account",
+			  "apiVersion": "2015-06-15",
+			  "type": "extensions",
+			  "name": "[concat(variables('VMNames')[0],'CustomScriptExtension')]",
+			  "location": "[resourceGroup().location]",
+			  "dependsOn": [
+				"[concat('Microsoft.Compute/virtualMachines/', variables('vmNames')[0])]"
+			  ],
+			  "properties": {
+				"publisher": "Microsoft.Compute",
+				"type": "CustomScriptExtension",
+				"autoUpgradeMinorVersion": true,
+				"typeHandlerVersion": "1.4",
+				"settings": {
+				  "fileUris": [
+					"[variables('transferScriptURI')]"
+				  ]
+				},
+				"protectedSettings": {
+				  "commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ','ImageTransfer.ps1 -SourceImage ',parameters('sourceImageURI'),' -SourceSAKey ', listKeys(resourceId(parameters('sourceStorageAccountResourceGroup'),'Microsoft.Storage/storageAccounts', variables('sourceStorageAccountName')), '2015-06-15').key1, ' -DestinationURI https://', variables('storageAccountName'), '.blob.core.windows.net/vhds', ' -DestinationSAKey ', listKeys(concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName')), '2015-06-15').key1)]"
+				}
+			  }
+			}
+		  ]
+		},
         {
             "comments": "Se ha generalizado a partir del recurso '/subscriptions/30faf2d0-6e8f-4eec-b0c6-89adcb705d1b/resourceGroups/AmladTemplate/providers/Microsoft.Compute/virtualMachines/AmladVM'.",
             "type": "Microsoft.Compute/virtualMachines",
-            "name": "[variables('vm_name')]",
+            "name": "[variables('vmNames')[1]]",
             "apiVersion": "2015-06-15",
             "location": "[resourceGroup().location]",
             "properties": {
@@ -54,14 +126,14 @@
                 },
                 "storageProfile": {
                     "osDisk": {
-                        "name": "AmladServer",
+                        "name": "[concat(variables('vmNames')[1],'-osdisk')]",
                         "createOption": "FromImage",
                         "osType": "Linux",
                         "image": {
-                            "uri": "[concat('https', '://', variables('orig_storageAccount_name'), '.blob.core.windows.net', concat('/vhds/', variables('orig_vhd_name'),'.vhd'))]"
+                            "uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName')), '2016-01-01').primaryEndpoints.blob, 'vhds/',variables('vmNames')[1])]"
                         },
                         "vhd": {
-                            "uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('dest_storageAccount_name')), '2016-01-01').primaryEndpoints.blob, 'vhds/',variables('vm_Name'), uniquestring(resourceGroup().id), 'osDisk.vhd')]"
+                            "uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName')), '2016-01-01').primaryEndpoints.blob, 'vhds/',variables('vmNames')[1],'-osdisk')]"
                     },
                         "caching": "ReadWrite"
                     },
@@ -70,20 +142,50 @@
                 "networkProfile": {
                     "networkInterfaces": [
                         {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_amladservernic_name'))]"
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicNames')[1])]"
                         }
                     ]
                 }
             },
             "resources": [],
             "dependsOn": [
-                "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_amladservernic_name'))]"
+				"[concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('nicNames')[1])]",
+				"[concat('Microsoft.Compute/virtualMachines/', variables('VMNames')[0],'/extensions/',variables('VMNames')[0],'CustomScriptExtension')]"
             ]
         },
         {
             "comments": "Se ha generalizado a partir del recurso '/subscriptions/30faf2d0-6e8f-4eec-b0c6-89adcb705d1b/resourceGroups/AmladTemplate/providers/Microsoft.Network/networkInterfaces/amladservernic'.",
             "type": "Microsoft.Network/networkInterfaces",
-            "name": "[parameters('networkInterfaces_amladservernic_name')]",
+            "name": "[variables('nicNames')[0]]",
+            "apiVersion": "2016-03-30",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig0",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName')), '/subnets/', variables('virtualSubnetworkName')))]"
+                            }
+                        }
+                    }
+                ],
+                "dnsSettings": {
+                    "dnsServers": []
+                },
+                "enableIPForwarding": false
+            },
+            "resources": [],
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_amladtemplatevnet_name'))]"
+            ]
+        },
+		{
+            "comments": "Se ha generalizado a partir del recurso '/subscriptions/30faf2d0-6e8f-4eec-b0c6-89adcb705d1b/resourceGroups/AmladTemplate/providers/Microsoft.Network/networkInterfaces/amladservernic'.",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[variables('nicNames')[1]]",
             "apiVersion": "2016-03-30",
             "location": "[resourceGroup().location]",
             "properties": {
@@ -93,10 +195,10 @@
                         "properties": {
                             "privateIPAllocationMethod": "Dynamic",
                             "publicIPAddress": {
-                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_amladtemplatepublicip_name'))]"
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
                             },
                             "subnet": {
-                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_amladtemplatevnet_name')), '/subnets/amladtemplatevsubnet')]"
+                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName')), '/subnets/', variables('virtualSubnetworkName')))]"
                             }
                         }
                     }
@@ -115,7 +217,7 @@
         {
             "comments": "Se ha generalizado a partir del recurso '/subscriptions/30faf2d0-6e8f-4eec-b0c6-89adcb705d1b/resourceGroups/AmladTemplate/providers/Microsoft.Network/publicIPAddresses/amladtemplatepublicip'.",
             "type": "Microsoft.Network/publicIPAddresses",
-            "name": "[parameters('publicIPAddresses_amladtemplatepublicip_name')]",
+            "name": "[variables('publicIPAddressName')]",
             "apiVersion": "2016-03-30",
             "location": "[resourceGroup().location]",
             "properties": {
@@ -131,7 +233,7 @@
         {
             "comments": "Se ha generalizado a partir del recurso '/subscriptions/30faf2d0-6e8f-4eec-b0c6-89adcb705d1b/resourceGroups/AmladTemplate/providers/Microsoft.Network/virtualNetworks/amladtemplatevnet'.",
             "type": "Microsoft.Network/virtualNetworks",
-            "name": "[parameters('virtualNetworks_amladtemplatevnet_name')]",
+            "name": "[parameters('virtualNetworkName')]",
             "apiVersion": "2016-03-30",
             "location": "[resourceGroup().location]",
             "properties": {
@@ -140,7 +242,7 @@
                 },
                 "subnets": [
                     {
-                        "name": "amladtemplatevsubnet",
+                        "name": "[variables('virtualSubnetworkName')]",
                         "properties": {
                             "addressPrefix": "[parameters('subnetAddressPrefix')]"
                         }
@@ -158,7 +260,7 @@
                 "tier": "Standard"
             },
             "kind": "Storage",
-            "name": "[variables('dest_storageAccount_name')]",
+            "name": "[variables('storageAccountName')]",
             "apiVersion": "2016-01-01",
             "location": "[resourceGroup().location]",
             "tags": {},
@@ -166,5 +268,6 @@
             "resources": [],
             "dependsOn": []
         }
+   
     ]
 }
