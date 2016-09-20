@@ -56,7 +56,7 @@
 			  "vmSize": "Basic_A2"
 			},
 			"osProfile": {
-			  "computerName": "[variables('vmNames')[0]]",
+			  "computerName": "[variables('vmNames')[0]]"
 			},
 			"storageProfile": {
 			  "imageReference": {
@@ -196,7 +196,7 @@
                                 "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
                             },
                             "subnet": {
-                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName')), '/subnets/', variables('virtualSubnetworkName')))]"
+                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName')), '/subnets/', variables('virtualSubnetworkName'))]"
                             }
                         }
                     }
