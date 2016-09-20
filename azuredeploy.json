@@ -17,7 +17,7 @@
     },
     "variables": {
         "domain": "[parameters('companyName')]",
-        "storageAccountName": "[concat('amladStor', uniqueString(resourceGroup().id))]",
+        "storageAccountName": "[concat('amladstor', uniqueString(resourceGroup().id))]",
 		"nicNames": [
 		  "[concat('transferNic', uniqueString(resourceGroup().id))]",
 		  "[concat('amladNic', uniqueString(resourceGroup().id))]"
